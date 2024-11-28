@@ -1,38 +1,77 @@
 // src/lib.rs
-use std::collections::HashMap;
-use std::io;
-use std::path::Path;
-// use std::fs::File;
-// use std::io::Write;
 use ffi_bridge::cxx_extracting;
+use std::collections::HashMap;
 use std::error::Error;
+use std::fs::{self, File};
+use std::io;
+use std::io::Write;
+use std::path::Path;
 
 #[cxx::bridge]
 mod ffi_bridge {
-    struct KeyValue {
-        key: String,
-        value: Vec<u8>,
+    struct FilenameAndData {
+        filename: String,
+        data: Vec<u8>,
     }
 
     unsafe extern "C++" {
         include!("bridge.hpp");
 
-        fn cxx_extracting(lib_path: String, data: &Vec<u8>) -> Result<Vec<KeyValue>>;
+        fn cxx_extracting(
+            lib_path: String,
+            data: &Vec<u8>,
+            password: String,
+        ) -> Result<Vec<FilenameAndData>>;
 
     }
 }
 
-pub fn extracting(lib_path: String, data: Vec<u8>) -> Result<String, Box<dyn Error>> {
-    let data = cxx_extracting(lib_path, &data)?;
-    let mut result_map = HashMap::new();
-    for kv in data {
-        result_map.insert(kv.key, kv.value);
-    }
-    for (k, v) in &result_map {
-        println!("{} - {}", k, v.len());
+#[derive(Default, Debug)]
+pub struct ExtractOptions {
+    /// Output directory path
+    pub output_dir: Option<String>,
+    /// Password for encrypted archives
+    pub password: Option<String>,
+}
+
+pub fn extracting(
+    lib_path: String,
+    data: Vec<u8>,
+    options: ExtractOptions,
+) -> Result<String, Box<dyn Error>> {
+    let password = options.password.unwrap_or_default();
+    let output_dir = options.output_dir.ok_or("Output directory not specified")?;
+    let output_path = Path::new(&output_dir);
+
+    if !output_path.exists() {
+        fs::create_dir_all(output_path)?;
+    } else {
+        if output_path.read_dir()?.next().is_some() {
+            return Err("Output directory is not empty".into());
+        }
     }
 
-    Ok(String::new())
+    let data = cxx_extracting(lib_path, &data, password)?;
+    let mut result_map = HashMap::new();
+    for kv in data {
+        result_map.insert(kv.filename, kv.data);
+    }
+
+    for (filename, content) in &result_map {
+        let file_path = output_path.join(filename);
+
+        if let Some(parent) = file_path.parent() {
+            if !parent.exists() {
+                fs::create_dir_all(parent)?;
+            }
+        }
+
+        let mut file = File::create(file_path)?;
+        file.write_all(content)?;
+        println!("{} - {} bytes written", filename, content.len());
+    }
+
+    Ok(format!("Files extracted to: {}", output_dir))
 }
 
 pub fn read_binary_file<P: AsRef<Path>>(path: P) -> io::Result<Vec<u8>> {

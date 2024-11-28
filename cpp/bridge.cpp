@@ -2,18 +2,18 @@
 #include "bridge.hpp"
 #include "implementations.hpp"
 
-rust::Vec<KeyValue> cxx_extracting(rust::String path, const rust::Vec<uint8_t> &file)
+rust::Vec<FilenameAndData> cxx_extracting(rust::String path, const rust::Vec<uint8_t> &file, rust::String password)
 {
     std::vector<uint8_t> data(file.begin(), file.end());
-    std::map<std::string, std::vector<uint8_t>> tmp = extracting(path.c_str(), data);
+    std::map<std::string, std::vector<uint8_t>> tmp = extracting(path.c_str(), data, password.c_str());
 
-    rust::Vec<KeyValue> extractingVec;
+    rust::Vec<FilenameAndData> extractingVec;
     for (const auto &item : tmp)
     {
-        KeyValue kv;
-        kv.key = item.first;
+        FilenameAndData kv;
+        kv.filename = item.first;
         auto file_data = item.second;
-        std::copy(file_data.begin(), file_data.end(), std::back_inserter(kv.value));
+        std::copy(file_data.begin(), file_data.end(), std::back_inserter(kv.data));
         extractingVec.push_back(kv);
     }
 

@@ -6,15 +6,16 @@
 #include <cstdint>
 #include <vector>
 
-// #include "cxxbridge/archive_extractor/src/lib.rs.h"
-#ifndef CXXBRIDGE1_STRUCT_KeyValue
-#define CXXBRIDGE1_STRUCT_KeyValue
-struct KeyValue final {
-  ::rust::String key;
-  ::rust::Vec<::std::uint8_t> value;
+// #include "cxxbridge/bit7z/src/lib.rs.h"
+
+#ifndef CXXBRIDGE1_STRUCT_FilenameAndData
+#define CXXBRIDGE1_STRUCT_FilenameAndData
+struct FilenameAndData final {
+  ::rust::String filename;
+  ::rust::Vec<::std::uint8_t> data;
 
   using IsRelocatable = ::std::true_type;
 };
-#endif // CXXBRIDGE1_STRUCT_KeyValue
+#endif // CXXBRIDGE1_STRUCT_FilenameAndData
 
-rust::Vec<KeyValue> cxx_extracting(rust::String path, const rust::Vec<uint8_t>& file);
+rust::Vec<FilenameAndData> cxx_extracting(rust::String path, const rust::Vec<uint8_t>& file, rust::String password);
