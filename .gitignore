@@ -1,1 +1,47 @@
 /target
+
+# vcpkg
+vcpkg_installed/
+.vcpkg/
+vcpkg-manifest-install.log
+
+# VS
+.vs/
+out/
+[Dd]ebug/
+[Rr]elease/
+x64/
+*.user
+*.aps
+*.pch
+*.vspscc
+*.vssscc
+*_i.c
+*_p.c
+*.ncb
+*.suo
+*.tlb
+*.tlh
+*.bak
+*.cache
+*.ilk
+*.log
+*.lib
+*.sbr
+*.sdf
+*.opensdf
+*.unsuccessfulbuild
+ipch/
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+build/
+
+
+# cpp
+main.cpp
+
+# 
+quick_notes.txt
