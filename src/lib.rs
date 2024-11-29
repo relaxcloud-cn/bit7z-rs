@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::fs::{self, File};
 use std::io;
+use std::env;
 use std::io::Write;
 use std::path::Path;
 
@@ -27,17 +28,18 @@ mod ffi_bridge {
 }
 
 #[derive(Default, Debug)]
-pub struct ExtractOptions {
+pub struct ExtractingOptions {
     /// Output directory path
     pub output_dir: Option<String>,
     /// Password for encrypted archives
     pub password: Option<String>,
+    /// Dynamic lib path 
+    pub lib_path: Option<String>,
 }
 
 pub fn extracting(
-    lib_path: String,
     data: Vec<u8>,
-    options: ExtractOptions,
+    options: ExtractingOptions,
 ) -> Result<String, Box<dyn Error>> {
     let password = options.password.unwrap_or_default();
     let output_dir = options.output_dir.ok_or("Output directory not specified")?;
@@ -51,7 +53,9 @@ pub fn extracting(
         }
     }
 
-    let data = cxx_extracting(lib_path, &data, password)?;
+    let valid_lib_path = get_lib_path(options.lib_path)?;
+
+    let data = cxx_extracting(valid_lib_path, &data, password)?;
     let mut result_map = HashMap::new();
     for kv in data {
         result_map.insert(kv.filename, kv.data);
@@ -78,10 +82,18 @@ pub fn read_binary_file<P: AsRef<Path>>(path: P) -> io::Result<Vec<u8>> {
     std::fs::read(path)
 }
 
-// fn write_binary_file<P: AsRef<Path>>(path: P, data: &[u8]) -> io::Result<()> {
-//     let mut file = File::create(path)?;
-//     file.write_all(data)
-// }
+fn get_lib_path(lib_path: Option<String>) -> Result<String, String> {
+    let path = match lib_path {
+        Some(path) => path,
+        None => env::var("LIB_PATH_7Z").map_err(|_| "Environment variable 'LIB_PATH_7Z' not found")?
+    };
+
+    if !Path::new(&path).exists() {
+        return Err(format!("Library path '{}' does not exist", path));
+    }
+
+    Ok(path)
+}
 
 // ALL SUPPORTED TYPEs
 
