@@ -1,5 +1,9 @@
 #[cfg(feature = "cli")]
 use clap::{Parser, Subcommand};
+use std::fs::File;
+use std::io::Write;
+use std::path::Path;
+use std::{fs, io};
 use yansi::Color::{Green, Red};
 use yansi::Paint;
 
@@ -41,12 +45,12 @@ fn main() -> anyhow::Result<()> {
             output_dir,
             password,
         } => {
-            let data = bit7z::read_binary_file(archive_path)?;
-            let mut options = bit7z::ExtractingOptions::default();
+            let mut options = ExtractingOptions::default();
+            options.path = archive_path.clone();
             options.output_dir = output_dir.clone();
             options.password = password.clone();
             options.lib_path = args.lib_path.clone();
-            match bit7z::extracting(data, options) {
+            match extracting(options) {
                 Ok(success_msg) => println!("{}: {}", "Success".paint(Green), success_msg),
                 Err(e) => println!("{}: {}", "Error".paint(Red), e),
             }
@@ -54,4 +58,52 @@ fn main() -> anyhow::Result<()> {
     }
 
     Ok(())
+}
+
+#[derive(Default, Debug)]
+pub struct ExtractingOptions {
+    /// path
+    pub path: String,
+    /// Output directory path
+    pub output_dir: Option<String>,
+    /// Password for encrypted archives
+    pub password: Option<String>,
+    /// Dynamic lib path
+    pub lib_path: Option<String>,
+}
+
+fn extracting(options: ExtractingOptions) -> anyhow::Result<String> {
+    let data = read_binary_file(options.path)?;
+    let output_dir = options
+        .output_dir
+        .ok_or_else(|| anyhow::anyhow!("Output directory not specified"))?;
+    let output_path = Path::new(&output_dir);
+
+    if !output_path.exists() {
+        fs::create_dir_all(output_path)?;
+    } else {
+        if output_path.read_dir()?.next().is_some() {
+            anyhow::bail!("Output directory is not empty");
+        }
+    }
+    let result_map = bit7z::extracting(data, options.lib_path, options.password)?;
+    for (filename, content) in &result_map {
+        let file_path = output_path.join(filename);
+
+        if let Some(parent) = file_path.parent() {
+            if !parent.exists() {
+                fs::create_dir_all(parent)?;
+            }
+        }
+
+        let mut file = File::create(file_path)?;
+        file.write_all(content)?;
+        println!("{} - {} bytes written", filename.paint(yansi::Color::Cyan), content.len());
+    }
+
+    Ok(format!("Files extracted to: {}", output_dir))
+}
+
+pub fn read_binary_file<P: AsRef<Path>>(path: P) -> io::Result<Vec<u8>> {
+    std::fs::read(path)
 }

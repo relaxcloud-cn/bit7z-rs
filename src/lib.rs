@@ -1,11 +1,7 @@
 // src/lib.rs
 use ffi_bridge::cxx_extracting;
 use std::collections::HashMap;
-use std::error::Error;
-use std::fs::{self, File};
-use std::io;
 use std::env;
-use std::io::Write;
 use std::path::Path;
 
 #[cxx::bridge]
@@ -27,33 +23,14 @@ mod ffi_bridge {
     }
 }
 
-#[derive(Default, Debug)]
-pub struct ExtractingOptions {
-    /// Output directory path
-    pub output_dir: Option<String>,
-    /// Password for encrypted archives
-    pub password: Option<String>,
-    /// Dynamic lib path 
-    pub lib_path: Option<String>,
-}
-
 pub fn extracting(
     data: Vec<u8>,
-    options: ExtractingOptions,
-) -> Result<String, Box<dyn Error>> {
-    let password = options.password.unwrap_or_default();
-    let output_dir = options.output_dir.ok_or("Output directory not specified")?;
-    let output_path = Path::new(&output_dir);
+    lib_path: Option<String>,
+    password: Option<String>,
+) -> anyhow::Result<HashMap<String, Vec<u8>>> {
+    let password = password.unwrap_or("".to_owned());
 
-    if !output_path.exists() {
-        fs::create_dir_all(output_path)?;
-    } else {
-        if output_path.read_dir()?.next().is_some() {
-            return Err("Output directory is not empty".into());
-        }
-    }
-
-    let valid_lib_path = get_lib_path(options.lib_path)?;
+    let valid_lib_path = get_lib_path(lib_path)?;
 
     let data = cxx_extracting(valid_lib_path, &data, password)?;
     let mut result_map = HashMap::new();
@@ -61,35 +38,18 @@ pub fn extracting(
         result_map.insert(kv.filename, kv.data);
     }
 
-    for (filename, content) in &result_map {
-        let file_path = output_path.join(filename);
-
-        if let Some(parent) = file_path.parent() {
-            if !parent.exists() {
-                fs::create_dir_all(parent)?;
-            }
-        }
-
-        let mut file = File::create(file_path)?;
-        file.write_all(content)?;
-        println!("{} - {} bytes written", filename, content.len());
-    }
-
-    Ok(format!("Files extracted to: {}", output_dir))
+    Ok(result_map)
 }
 
-pub fn read_binary_file<P: AsRef<Path>>(path: P) -> io::Result<Vec<u8>> {
-    std::fs::read(path)
-}
-
-fn get_lib_path(lib_path: Option<String>) -> Result<String, String> {
+fn get_lib_path(lib_path: Option<String>) -> anyhow::Result<String> {
     let path = match lib_path {
         Some(path) => path,
-        None => env::var("LIB_PATH_7Z").map_err(|_| "Environment variable 'LIB_PATH_7Z' not found")?
+        None => env::var("LIB_PATH_7Z")
+            .map_err(|_| anyhow::anyhow!("Environment variable 'LIB_PATH_7Z' not found"))?,
     };
 
     if !Path::new(&path).exists() {
-        return Err(format!("Library path '{}' does not exist", path));
+        anyhow::bail!(format!("Library path '{}' does not exist", path));
     }
 
     Ok(path)
