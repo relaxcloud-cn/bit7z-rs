@@ -21,7 +21,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .flag_if_supported("-std=c++17")
         .define("BIT7Z_AUTO_FORMAT", None);
 
-    // add vcpkg to find packages 
+    // add vcpkg to find packages
     for include in lib.include_paths {
         build.include(&include);
     }
