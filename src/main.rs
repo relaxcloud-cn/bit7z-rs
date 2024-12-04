@@ -86,7 +86,7 @@ fn extracting(options: ExtractingOptions) -> anyhow::Result<String> {
             anyhow::bail!("Output directory is not empty");
         }
     }
-    let result_map = bit7z::extracting(data, options.lib_path, options.password)?;
+    let result_map = bit7z::extract(data, options.lib_path, options.password)?;
     for (filename, content) in &result_map {
         let file_path = output_path.join(filename);
 

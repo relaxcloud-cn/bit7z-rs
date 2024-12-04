@@ -11,4 +11,4 @@
 #include "bit7z/biterror.hpp"
 #include <stdexcept> 
 
-std::map<std::string, std::vector<uint8_t>> extracting(std::string path, const std::vector<uint8_t> file, std::string password);
+std::map<std::string, std::vector<uint8_t>> extract(std::string path, const std::vector<uint8_t> file, std::string password);

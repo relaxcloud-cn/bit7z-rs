@@ -1,6 +1,6 @@
 #include "implementations.hpp"
 
-std::map<std::string, std::vector<uint8_t>> extracting(std::string path, const std::vector<uint8_t> file, std::string password)
+std::map<std::string, std::vector<uint8_t>> extract(std::string path, const std::vector<uint8_t> file, std::string password)
 {
     std::locale::global(std::locale("en_US.UTF-8"));
     std::map<std::string, std::vector<uint8_t>> result_map;

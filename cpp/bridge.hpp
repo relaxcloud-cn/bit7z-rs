@@ -18,4 +18,4 @@ struct FilenameAndData final {
 };
 #endif // CXXBRIDGE1_STRUCT_FilenameAndData
 
-rust::Vec<FilenameAndData> cxx_extracting(rust::String path, const rust::Vec<uint8_t>& file, rust::String password);
+rust::Vec<FilenameAndData> cxx_extract(rust::String path, const rust::Vec<uint8_t>& file, rust::String password);

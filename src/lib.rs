@@ -1,5 +1,5 @@
 // src/lib.rs
-use ffi_bridge::cxx_extracting;
+use ffi_bridge::cxx_extract;
 use std::collections::HashMap;
 use std::env;
 use std::path::Path;
@@ -14,7 +14,7 @@ mod ffi_bridge {
     unsafe extern "C++" {
         include!("bridge.hpp");
 
-        fn cxx_extracting(
+        fn cxx_extract(
             lib_path: String,
             data: &Vec<u8>,
             password: String,
@@ -23,7 +23,7 @@ mod ffi_bridge {
     }
 }
 
-pub fn extracting(
+pub fn extract(
     data: Vec<u8>,
     lib_path: Option<String>,
     password: Option<String>,
@@ -32,7 +32,7 @@ pub fn extracting(
 
     let valid_lib_path = get_lib_path(lib_path)?;
 
-    let data = cxx_extracting(valid_lib_path, &data, password)?;
+    let data = cxx_extract(valid_lib_path, &data, password)?;
     let mut result_map = HashMap::new();
     for kv in data {
         result_map.insert(kv.filename, kv.data);
