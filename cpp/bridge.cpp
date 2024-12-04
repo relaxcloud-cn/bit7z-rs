@@ -19,3 +19,8 @@ rust::Vec<FilenameAndData> cxx_extract(rust::String path, const rust::Vec<uint8_
 
     return extractVec;
 }
+
+ListData cxx_list(rust::String path, const rust::Vec<uint8_t>& file) {
+    std::vector<uint8_t> data(file.begin(), file.end());
+    return list(path.c_str(), data);
+}

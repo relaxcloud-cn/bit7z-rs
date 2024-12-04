@@ -33,6 +33,10 @@ enum Commands {
         #[arg(short = 'p')]
         password: Option<String>,
     },
+    L {
+        /// Archive file path
+        archive_path: String,
+    },
 }
 
 #[cfg(feature = "cli")]
@@ -52,6 +56,12 @@ fn main() -> anyhow::Result<()> {
             options.lib_path = args.lib_path.clone();
             match extracting(options) {
                 Ok(success_msg) => println!("{}: {}", "Success".paint(Green), success_msg),
+                Err(e) => println!("{}: {}", "Error".paint(Red), e),
+            }
+        }
+        Commands::L { archive_path } => {
+            match listing(args.lib_path.clone(), archive_path.clone()) {
+                Ok(()) => println!("{}", "Success".paint(Green)),
                 Err(e) => println!("{}: {}", "Error".paint(Red), e),
             }
         }
@@ -98,10 +108,58 @@ fn extracting(options: ExtractingOptions) -> anyhow::Result<String> {
 
         let mut file = File::create(file_path)?;
         file.write_all(content)?;
-        println!("{} - {} bytes written", filename.paint(yansi::Color::Cyan), content.len());
+        println!(
+            "{} - {} bytes written",
+            filename.paint(yansi::Color::Cyan),
+            content.len()
+        );
     }
 
     Ok(format!("Files extracted to: {}", output_dir))
+}
+
+fn listing(lib_path: Option<String>, path: String) -> anyhow::Result<()> {
+    let data = read_binary_file(path)?;
+
+    let list_data = bit7z::list(data, lib_path)?;
+
+    println!("{}", Paint::cyan("Archive properties"));
+    println!(
+        "  {}: {}",
+        Paint::blue("Items count"),
+        list_data.items_count
+    );
+    println!(
+        "  {}: {}",
+        Paint::blue("Folders count"),
+        list_data.folders_count
+    );
+    println!(
+        "  {}: {}",
+        Paint::blue("Files count"),
+        list_data.files_count
+    );
+    println!("  {}: {}", Paint::blue("Size"), list_data.size);
+    println!(
+        "  {}: {}\n",
+        Paint::blue("Packed size"),
+        list_data.packed_size
+    );
+
+    println!("{}", Paint::cyan("Archived items"));
+    for item in &list_data.items {
+        println!();
+        println!("  {}: {}", Paint::blue("Item index"), item.index);
+        println!("    {}: {}", Paint::blue("Name"), item.name);
+        println!("    {}: {}", Paint::blue("Extension"), item.extension);
+        println!("    {}: {}", Paint::blue("Path"), item.path);
+        println!("    {}: {}", Paint::blue("IsDir"), item.is_dir);
+        println!("    {}: {}", Paint::blue("Size"), item.size);
+        println!("    {}: {}", Paint::blue("Packed size"), item.packed_size);
+        println!("    {}: {:x}", Paint::blue("CRC"), item.crc);
+    }
+
+    Ok(())
 }
 
 pub fn read_binary_file<P: AsRef<Path>>(path: P) -> io::Result<Vec<u8>> {

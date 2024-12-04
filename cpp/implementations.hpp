@@ -12,3 +12,4 @@
 #include <stdexcept> 
 
 std::map<std::string, std::vector<uint8_t>> extract(std::string path, const std::vector<uint8_t> file, std::string password);
+ListData list(std::string path, const std::vector<uint8_t> file);

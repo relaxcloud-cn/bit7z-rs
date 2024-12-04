@@ -1,5 +1,5 @@
 // src/lib.rs
-use ffi_bridge::cxx_extract;
+use ffi_bridge::{cxx_extract, cxx_list, ListData};
 use std::collections::HashMap;
 use std::env;
 use std::path::Path;
@@ -11,6 +11,26 @@ mod ffi_bridge {
         data: Vec<u8>,
     }
 
+    struct ListData {
+        items_count: u32,
+        folders_count: u32,
+        files_count: u32,
+        size: u64,
+        packed_size: u64,
+        items: Vec<Item>,
+    }
+
+    struct Item {
+        index: u32,
+        name: String,
+        extension: String,
+        path: String,
+        is_dir: bool,
+        size: u64,
+        packed_size: u64,
+        crc: u32,
+    }
+
     unsafe extern "C++" {
         include!("bridge.hpp");
 
@@ -20,6 +40,7 @@ mod ffi_bridge {
             password: String,
         ) -> Result<Vec<FilenameAndData>>;
 
+        fn cxx_list(lib_path: String, data: &Vec<u8>) -> Result<ListData>;
     }
 }
 
@@ -39,6 +60,11 @@ pub fn extract(
     }
 
     Ok(result_map)
+}
+
+pub fn list(data: Vec<u8>, lib_path: Option<String>) -> anyhow::Result<ListData> {
+    let valid_lib_path = get_lib_path(lib_path)?;
+    Ok(cxx_list(valid_lib_path, &data)?)
 }
 
 fn get_lib_path(lib_path: Option<String>) -> anyhow::Result<String> {
