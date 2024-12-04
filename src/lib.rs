@@ -17,18 +17,30 @@ mod ffi_bridge {
         files_count: u32,
         size: u64,
         packed_size: u64,
+        has_encrypted_items: bool,
+        is_encrypted: bool,
+        volumes_count: u32,
+        is_multi_volume: bool,
+        is_solid: bool,
         items: Vec<Item>,
     }
 
     struct Item {
         index: u32,
+        is_dir: bool,
+        is_sym_link: bool,
         name: String,
         extension: String,
         path: String,
-        is_dir: bool,
+        native_path: String,
         size: u64,
+        creation_time: i64,
+        last_access_time: i64,
+        last_write_time: i64,
+        attributes: u32,
         packed_size: u64,
         crc: u32,
+        is_encrypted: bool,
     }
 
     unsafe extern "C++" {

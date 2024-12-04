@@ -30,6 +30,11 @@ struct ListData final {
   ::std::uint32_t files_count;
   ::std::uint64_t size;
   ::std::uint64_t packed_size;
+  bool has_encrypted_items;
+  bool is_encrypted;
+  ::std::uint32_t volumes_count;
+  bool is_multi_volume;
+  bool is_solid;
   ::rust::Vec<::Item> items;
 
   using IsRelocatable = ::std::true_type;
@@ -40,17 +45,26 @@ struct ListData final {
 #define CXXBRIDGE1_STRUCT_Item
 struct Item final {
   ::std::uint32_t index;
+  bool is_dir;
+  bool is_sym_link;
   ::rust::String name;
   ::rust::String extension;
   ::rust::String path;
-  bool is_dir;
+  ::rust::String native_path;
   ::std::uint64_t size;
+  ::std::int64_t creation_time;
+  ::std::int64_t last_access_time;
+  ::std::int64_t last_write_time;
+  ::std::uint32_t attributes;
   ::std::uint64_t packed_size;
   ::std::uint32_t crc;
+  bool is_encrypted;
 
   using IsRelocatable = ::std::true_type;
 };
 #endif // CXXBRIDGE1_STRUCT_Item
+
+
 
 
 rust::Vec<FilenameAndData> cxx_extract(rust::String path, const rust::Vec<uint8_t>& file, rust::String password);

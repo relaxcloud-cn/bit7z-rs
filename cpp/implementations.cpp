@@ -120,18 +120,30 @@ ListData list(std::string path, const std::vector<uint8_t> file)
         list_data.files_count = arc.filesCount();
         list_data.size = arc.size();
         list_data.packed_size = arc.packSize();
+        list_data.has_encrypted_items = arc.hasEncryptedItems();
+        list_data.is_encrypted = arc.isEncrypted();
+        list_data.volumes_count = arc.volumesCount();
+        list_data.is_multi_volume = arc.isMultiVolume();
+        list_data.is_solid = arc.isSolid();
 
         for (const auto &item : arc)
         {
             Item tmp_item;
             tmp_item.index = item.index();
+            tmp_item.is_dir = item.isDir();
+            tmp_item.is_sym_link = item.isSymLink();
             tmp_item.name = item.name();
             tmp_item.extension = item.extension();
             tmp_item.path = item.path();
-            tmp_item.is_dir = item.isDir();
+            tmp_item.native_path = item.nativePath();
             tmp_item.size = item.size();
+            tmp_item.creation_time = item.creationTime().time_since_epoch().count();
+            tmp_item.last_access_time = item.lastAccessTime().time_since_epoch().count();
+            tmp_item.last_write_time = item.lastWriteTime().time_since_epoch().count();
+            tmp_item.attributes = item.attributes();
             tmp_item.packed_size = item.packSize();
             tmp_item.crc = item.crc();
+            tmp_item.is_encrypted = item.isEncrypted();
             items.push_back(tmp_item);
         }
     }

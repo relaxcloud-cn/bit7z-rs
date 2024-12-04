@@ -44,11 +44,7 @@ fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
     match &args.command {
-        Commands::X {
-            archive_path,
-            output_dir,
-            password,
-        } => {
+        Commands::X { archive_path, output_dir, password } => {
             let mut options = ExtractingOptions::default();
             options.path = archive_path.clone();
             options.output_dir = output_dir.clone();
@@ -59,12 +55,10 @@ fn main() -> anyhow::Result<()> {
                 Err(e) => println!("{}: {}", "Error".paint(Red), e),
             }
         }
-        Commands::L { archive_path } => {
-            match listing(args.lib_path.clone(), archive_path.clone()) {
-                Ok(()) => println!("{}", "Success".paint(Green)),
-                Err(e) => println!("{}: {}", "Error".paint(Red), e),
-            }
-        }
+        Commands::L { archive_path } => match listing(args.lib_path.clone(), archive_path.clone()) {
+            Ok(()) => println!("{}", "Success".paint(Green)),
+            Err(e) => println!("{}: {}", "Error".paint(Red), e),
+        },
     }
 
     Ok(())
@@ -84,9 +78,7 @@ pub struct ExtractingOptions {
 
 fn extracting(options: ExtractingOptions) -> anyhow::Result<String> {
     let data = read_binary_file(options.path)?;
-    let output_dir = options
-        .output_dir
-        .ok_or_else(|| anyhow::anyhow!("Output directory not specified"))?;
+    let output_dir = options.output_dir.ok_or_else(|| anyhow::anyhow!("Output directory not specified"))?;
     let output_path = Path::new(&output_dir);
 
     if !output_path.exists() {
@@ -108,11 +100,7 @@ fn extracting(options: ExtractingOptions) -> anyhow::Result<String> {
 
         let mut file = File::create(file_path)?;
         file.write_all(content)?;
-        println!(
-            "{} - {} bytes written",
-            filename.paint(yansi::Color::Cyan),
-            content.len()
-        );
+        println!("{} - {} bytes written", filename.paint(yansi::Color::Cyan), content.len());
     }
 
     Ok(format!("Files extracted to: {}", output_dir))
@@ -120,31 +108,19 @@ fn extracting(options: ExtractingOptions) -> anyhow::Result<String> {
 
 fn listing(lib_path: Option<String>, path: String) -> anyhow::Result<()> {
     let data = read_binary_file(path)?;
-
     let list_data = bit7z::list(data, lib_path)?;
 
     println!("{}", Paint::cyan("Archive properties"));
-    println!(
-        "  {}: {}",
-        Paint::blue("Items count"),
-        list_data.items_count
-    );
-    println!(
-        "  {}: {}",
-        Paint::blue("Folders count"),
-        list_data.folders_count
-    );
-    println!(
-        "  {}: {}",
-        Paint::blue("Files count"),
-        list_data.files_count
-    );
+    println!("  {}: {}", Paint::blue("Items count"), list_data.items_count);
+    println!("  {}: {}", Paint::blue("Folders count"), list_data.folders_count);
+    println!("  {}: {}", Paint::blue("Files count"), list_data.files_count);
     println!("  {}: {}", Paint::blue("Size"), list_data.size);
-    println!(
-        "  {}: {}\n",
-        Paint::blue("Packed size"),
-        list_data.packed_size
-    );
+    println!("  {}: {}", Paint::blue("Packed size"), list_data.packed_size);
+    println!("  {}: {}", Paint::blue("Has encrypted items"), list_data.has_encrypted_items);
+    println!("  {}: {}", Paint::blue("Is encrypted"), list_data.is_encrypted);
+    println!("  {}: {}", Paint::blue("Volumes count"), list_data.volumes_count);
+    println!("  {}: {}", Paint::blue("Is multi volume"), list_data.is_multi_volume);
+    println!("  {}: {}\n", Paint::blue("Is solid"), list_data.is_solid);
 
     println!("{}", Paint::cyan("Archived items"));
     for item in &list_data.items {
@@ -153,10 +129,17 @@ fn listing(lib_path: Option<String>, path: String) -> anyhow::Result<()> {
         println!("    {}: {}", Paint::blue("Name"), item.name);
         println!("    {}: {}", Paint::blue("Extension"), item.extension);
         println!("    {}: {}", Paint::blue("Path"), item.path);
-        println!("    {}: {}", Paint::blue("IsDir"), item.is_dir);
+        println!("    {}: {}", Paint::blue("Native path"), item.native_path);
+        println!("    {}: {}", Paint::blue("Is directory"), item.is_dir);
+        println!("    {}: {}", Paint::blue("Is symbolic link"), item.is_sym_link);
         println!("    {}: {}", Paint::blue("Size"), item.size);
         println!("    {}: {}", Paint::blue("Packed size"), item.packed_size);
         println!("    {}: {:x}", Paint::blue("CRC"), item.crc);
+        println!("    {}: {}", Paint::blue("Is encrypted"), item.is_encrypted);
+        println!("    {}: {}", Paint::blue("Attributes"), item.attributes);
+        println!("    {}: {}", Paint::blue("Creation time"), item.creation_time);
+        println!("    {}: {}", Paint::blue("Last access time"), item.last_access_time);
+        println!("    {}: {}", Paint::blue("Last write time"), item.last_write_time);
     }
 
     Ok(())
